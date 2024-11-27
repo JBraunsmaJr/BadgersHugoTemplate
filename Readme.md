@@ -43,7 +43,7 @@ They work together to do multiple things at once. For example’s sake, we're us
 The following command will install the `terminal` theme and update the `.env` file to use `terminal`. 
 
 ```bash
-python ./setup.py --install-theme terminal --install-theme-gomod github.com/panr/hugo-theme-terminal/v4 --install-theme-github https://github.com/panr/hugo-theme-terminal.git themes/terminal
+python ./setup.py --install-theme terminal --install-theme-gomod github.com/panr/hugo-theme-terminal/v4 --install-theme-github https://github.com/panr/hugo-theme-terminal.git
 ```
 
 Within the template we have `terminal-hugo.toml`, you'll want to replace the `hugo.toml` in the website directory with that.
