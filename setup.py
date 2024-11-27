@@ -1,5 +1,6 @@
 ﻿import os
 import argparse
+from time import sleep
 from typing import Final
 
 SCRIPT_DIR: Final[str] = os.path.dirname(os.path.realpath(__file__))
@@ -13,6 +14,9 @@ def is_container_running() -> bool:
 def is_image_present() -> bool:
     return len(os.popen(f"docker images -q badgers-hugo-template -q").read().strip()) > 0
 
+def build_image():
+    os.system("docker compose build")
+
 def run_command_in_container(command: str):
     os.system(f"{CONTAINER_COMMAND_PREFIX} {command}")
 
@@ -23,7 +27,14 @@ def has_go_module_been_initialized():
     return os.path.exists(os.path.join(WEBSITE_PATH, "go.mod"))
 
 def start_container():
-    os.system(f"docker compose up -d")
+    os.system("docker compose up -d")
+
+def stop_container():
+    os.system("docker compose down")
+
+def restart_container():
+    stop_container()
+    start_container()
 
 def update_env_variables(variables: dict[str, str]):
     with open(os.path.join(SCRIPT_DIR, ".env"), "w") as f:
@@ -40,10 +51,13 @@ def install_theme(theme_name: str, golang_module: str, github_url: str):
     
     if not os.path.exists(os.path.join(SCRIPT_DIR, ".gitmodules")):
         # Then must add this as a submodule
-        os.system("gitmodules submodule init")
+        os.system("git submodule init")        
     
-    os.system(f".gitmodules submodule add -f \"{github_url}\" {os.path.join(WEBSITE_PATH, 'themes', theme_name)}")       
+    os.system(f"git submodule add -f \"{github_url}\" {os.path.join('website', 'themes', theme_name)}")       
     update_env_variables({"THEME_NAME": theme_name})
+
+if not is_image_present():
+    build_image()
 
 parser = argparse.ArgumentParser()
 
@@ -59,7 +73,7 @@ parser.add_argument("--theme",
                     required=False,
                     help="The name of the theme to use")
 
-parser.add_argument("--intall-theme",
+parser.add_argument("--install-theme",
                     dest="install_theme",
                     required=False,
                     help="The name of the theme to install")
@@ -85,7 +99,8 @@ if not is_container_running():
         print(f"Was unable to start container...\n{ex}\n\n"
               f"Please run `docker compose up -d` then try again...")        
         exit(1)
-        
+    print("Waiting for container to settle down...")
+    sleep(5)
     if not is_container_running():
         print(f"Container {CONTAINER_NAME} must be running.\n\n"
               f"Please run `docker compose up -d")

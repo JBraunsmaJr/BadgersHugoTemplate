@@ -30,3 +30,5 @@ VOLUME /blogsite
 
 # This is the default hugo port
 EXPOSE 1313
+EXPOSE 80
+EXPOSE 35729

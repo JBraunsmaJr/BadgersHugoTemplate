@@ -7,6 +7,7 @@ fi
 
 cd /blogsite
 
-# Full rebuilds on change
 # Must bind to 0.0.0.0 so it binds to all network interfaces in container!!!!
-hugo server --disableFastRender --buildDrafts --watch --bind 0.0.0.0 ${THEME_NAME:+-t $THEME_NAME}
+# The poll option is required (for windows at least) - where hugo periodically checks contents to determine if rebuild is needed
+# Build all the things
+hugo server --poll "700ms" --navigateToChanged --disableFastRender --watch=true --bind 0.0.0.0 ${THEME_NAME:+-t $THEME_NAME}
