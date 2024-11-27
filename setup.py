@@ -109,6 +109,10 @@ if not is_container_running():
 if args.sitename:
     run_command_in_container(f"hugo mod init {args.sitename}")
 
+if args.theme is not None:
+    update_env_variables({"THEME_NAME": args.theme})
+    restart_container()
+
 if args.install_theme or args.install_theme_gomod or args.install_theme_github:
     errors: list[str] = []
     # Ensure all 3 are present
