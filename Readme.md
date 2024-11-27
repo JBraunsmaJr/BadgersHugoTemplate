@@ -38,7 +38,7 @@ They work together to do multiple things at once. For example’s sake, we're us
 | --- | --- | --- |
 | --install-theme | Name of theme to install | terminal |
 | --install-theme-gomod | Go module name | github.com/panr/hugo-theme-terminal/v4 |
-| --insstall-theme-github | Github URL to submodule | https://github.com/panr/hugo-theme-terminal.git |
+| --install-theme-github | Github URL to submodule | https://github.com/panr/hugo-theme-terminal.git |
 
 The following command will install the `terminal` theme and update the `.env` file to use `terminal`. 
 
