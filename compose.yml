@@ -1,0 +1,10 @@
+﻿services:
+  blogsite:
+    image: badgers-hugo-template
+    container_name: blogsite
+    build:
+      context: .
+    volumes:
+      - "./website:/blogsite/"
+    ports:
+      - "1313:1313"
