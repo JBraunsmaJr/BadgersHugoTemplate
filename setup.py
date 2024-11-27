@@ -107,7 +107,7 @@ if not is_container_running():
               f"Please run `docker compose up -d")
         exit(1)
 
-if args.sitename:
+if args.sitename is not None:
     run_command_in_container(f"hugo mod init {args.sitename}")
     os.makedirs(os.path.join(WEBSITE_PATH, "content", "posts"))
     with open(os.path.join(WEBSITE_PATH, "content", "posts", "FirstPost.md"), "w") as f:
