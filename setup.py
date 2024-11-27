@@ -55,6 +55,7 @@ def install_theme(theme_name: str, golang_module: str, github_url: str):
     
     os.system(f"git submodule add -f \"{github_url}\" {os.path.join('website', 'themes', theme_name)}")       
     update_env_variables({"THEME_NAME": theme_name})
+    restart_container()
 
 if not is_image_present():
     build_image()
@@ -108,6 +109,12 @@ if not is_container_running():
 
 if args.sitename:
     run_command_in_container(f"hugo mod init {args.sitename}")
+    os.makedirs(os.path.join(WEBSITE_PATH, "content", "posts"))
+    with open(os.path.join(WEBSITE_PATH, "content", "posts", "FirstPost.md"), "w") as f:
+        f.write("""First Post
+        
+        I have some content!
+        """)
 
 if args.theme is not None:
     update_env_variables({"THEME_NAME": args.theme})
