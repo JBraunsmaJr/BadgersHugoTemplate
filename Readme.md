@@ -59,4 +59,4 @@ python ./setup.py --theme terminal
 
 ## Live Reload
 
-Go to `http://localhost:1313` and you should see content! As you make changes to your markdown files you should see your changes in near-real-time.
+Go to [http://localhost:1313](http://localhost:1313) and you should see content! As you make changes to your markdown files you should see your changes in near-real-time.
