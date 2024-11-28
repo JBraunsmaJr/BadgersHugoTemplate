@@ -63,30 +63,34 @@ if not is_image_present():
 parser = argparse.ArgumentParser()
 
 # This argument is only valid if the go module hasn't been initialized (or the website)
-if not has_go_module_been_initialized():
-    parser.add_argument(
-        "--sitename", 
-        dest="sitename", 
-        required=True)
+parser.add_argument(
+    "--sitename",
+    default=None,
+    dest="sitename", 
+    required=not has_go_module_been_initialized())
 
 parser.add_argument("--theme",
                     dest="theme",
+                    default=None,
                     required=False,
                     help="The name of the theme to use")
 
 parser.add_argument("--install-theme",
                     dest="install_theme",
                     required=False,
+                    default=None,
                     help="The name of the theme to install")
 
 parser.add_argument("--install-theme-gomod",
                     dest="install_theme_gomod",
                     required=False,
+                    default=None,
                     help="Golang module to add")
 
 parser.add_argument("--install-theme-github",
                     dest="install_theme_github",
                     required=False,
+                    default=None,
                     help="Github URL for github submodule")
 
 args = parser.parse_args()
