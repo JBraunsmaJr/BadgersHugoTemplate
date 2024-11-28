@@ -60,3 +60,19 @@ python ./setup.py --theme terminal
 ## Live Reload
 
 Go to [http://localhost:1313](http://localhost:1313) and you should see content! As you make changes to your markdown files you should see your changes in near-real-time.
+
+## Manage Container
+
+If you aren't trying to configure anything, and want to manage the container
+
+**Start container:**
+
+```bash
+docker compose up -d
+```
+
+**Stop container:**
+
+``bash
+docker compose down
+``
