@@ -8,15 +8,13 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  OWNER: '${{ github.repository_owner }}'
-  IMAGE_NAME: '${{ OWNER,, }}/badgers-hugo-template'
 
 jobs:
 
   build:
 
     runs-on: ubuntu-latest
-
+  
     permissions:
       contents: read
       packages: write
@@ -25,7 +23,17 @@ jobs:
     
     steps:
     - uses: actions/checkout@v4
-
+      
+    - name: Set lowercase owner name
+      run: |
+        echo "OWNER_LOWER_CASE=${OWNER,,}" >>${GITHUB_ENV}
+      env:
+        OWNER: '${{ github.repository_owner }}'
+    
+    - name: Set image name
+      run: |
+        echo "IMAGE_NAME=${OWNER_LOWER_CASE}/badgers-hugo-template" >>${GITHUB_ENV}
+      
     - name: Login to Container Registry
       uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
       with:
