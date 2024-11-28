@@ -1,12 +1,15 @@
-﻿import os
-import argparse
+﻿import argparse
+import json
+import os
+import re
 from time import sleep
-from typing import Final
+from typing import Final, Any
 
 SCRIPT_DIR: Final[str] = os.path.dirname(os.path.realpath(__file__))
 CONTAINER_NAME: Final[str] = "blogsite"
 CONTAINER_COMMAND_PREFIX: Final[str] = f"docker exec {CONTAINER_NAME}"
 WEBSITE_PATH: Final[str] = os.path.join(SCRIPT_DIR, "website")
+ENV_FILE = os.path.join(SCRIPT_DIR, ".env")
 
 def is_container_running() -> bool:
     return len(os.popen(f"docker ps -q --filter name={CONTAINER_NAME}").read().strip()) > 0
@@ -36,38 +39,124 @@ def restart_container():
     stop_container()
     start_container()
 
-def update_env_variables(variables: dict[str, str]):
+# Read the file and remove the BOM if present
+def ensure_no_bom(file_path):
+    """
+    Discovered certain editors / systems may add a nasty little character
+    ï»¿  <--- That thing
+    Which is a byte order mark (BOM). Indicates file formatting which will break json
+    parsing
+    """
+    with open(file_path, "rb") as f:
+        content = f.read()
+    # Remove BOM if it exists
+    content = content.lstrip(b'\xef\xbb\xbf')
+    # Write the cleaned content back to the file
+    with open(file_path, "wb") as f:
+        f.write(content)
+
+def get_config() -> dict[str, Any]:
+    ensure_no_bom(os.path.join(SCRIPT_DIR, "config.json"))
+    with open(os.path.join(SCRIPT_DIR, "config.json"), "r") as f:
+        contents = json.load(f)
+    return contents
+
+def set_config(variables: dict[str, Any]) -> dict[str, Any]:
+    variables.update(get_config())
+    with open(os.path.join(SCRIPT_DIR, "config.json"), "w") as f:
+        f.write(json.dumps(variables))
+    return variables
+
+
+def update_env_variables(variables: dict[str, str | bool]):    
+    if os.path.exists(ENV_FILE):
+        with open(os.path.join(SCRIPT_DIR, ".env"), "r") as f:
+            contents = {name: value for name, value in [x.split('=') for x in f.readlines() if len(x.strip()) > 1]}
+    else:
+        contents = {}
+
+    for key, value in variables.items():
+        contents[key] = value
+
     with open(os.path.join(SCRIPT_DIR, ".env"), "w") as f:
-        for variable_name, value in variables.items():
+        for variable_name, value in contents.items():
             f.write(f"{variable_name}={value}\n")
 
-def install_theme(theme_name: str, golang_module: str, github_url: str):
-    # Must initialize the golang module
-    run_command_in_container(f"hugo mod get  {golang_module}")
-    
+def set_deploy_site(value: bool):
+    update_env_variables({"DEPLOY": value})
+
+def wait_for_container():
+    while is_container_running():
+        sleep(0.5)
+
+def push_deployment():
+    config = get_config()
+    branch_name = config["deploymentBranch"]
+
+    if len(os.popen("git branch --list").read().strip()) > 0:
+        print(f"Cleaning up existing {branch_name}...")
+        os.system(f"git branch -D {branch_name}")
+
+    print(f"Creating subtree {branch_name}...")
+    os.system(f"git subtree split --prefix website/public -b {branch_name}")
+
+    print(f"Pushing deployment...")
+    os.system(f"git push origin {branch_name}")
+
+
+def initialize_repository():
     if not os.path.exists(os.path.join(SCRIPT_DIR, ".git")):
         print("Git repository was not initialized. Doing that now...")
         os.system("git init")
-    
+
     if not os.path.exists(os.path.join(SCRIPT_DIR, ".gitmodules")):
-        # Then must add this as a submodule
-        os.system("git submodule init")        
-    
-    os.system(f"git submodule add -f \"{github_url}\" {os.path.join('website', 'themes', theme_name)}")       
-    update_env_variables({"THEME_NAME": theme_name})
-    restart_container()
+        print("Git submodules not initialized. Doing that now...")
+        os.system("git submodule init")
+
+    config = get_config()
+
+    if "goSubName" in config and config["goSubName"] is not None and not has_go_module_been_initialized():
+        run_command_in_container(f"hugo mod init {config['goSubName']}")
+    elif not has_go_module_been_initialized():
+        print(f"Must set goSubName in config.json...")
+        exit(1)
+
+    default_theme: str | None = None
+
+    if "themes" in config and len(config["themes"]) > 0:
+        for theme in config["themes"]:
+            default_theme = theme["name"]
+            run_command_in_container(f"hugo mod get {theme['moduleName']}")
+            theme_name = theme["name"]
+            url = theme["githubUrl"]
+            os.system(f"git submodule add -f \"{url}\" {os.path.join('website', 'themes', theme_name)}")
+            
+            # if we're using terminal we'll automatically copy our config over for it
+            if theme_name.lower() == "terminal":
+                with open(os.path.join(SCRIPT_DIR, "terminal-hugo.toml"), "r") as f:
+                    terminal_config_contents = f.read()
+                with open(os.path.join(WEBSITE_PATH, "hugo.toml"), "w") as f:
+                    f.write(terminal_config_contents)
+
+    if not os.path.exists(os.path.join(WEBSITE_PATH, "content", "posts")):
+        os.makedirs(os.path.join(WEBSITE_PATH, "content", "posts"))
+        with open(os.path.join(WEBSITE_PATH, "content", "posts", "FirstPost.md"), "w") as f:
+            f.write("""First Post
+I have some content!
+        """)
+    # Must restart container if theme changes
+    if "theme" in config and config["theme"] is not None:
+        update_env_variables({"THEME": config["theme"]})
+        restart_container()
+    elif default_theme is not None:
+        update_env_variables({"THEME": default_theme})
+        restart_container()
+
 
 if not is_image_present():
     build_image()
 
 parser = argparse.ArgumentParser()
-
-# This argument is only valid if the go module hasn't been initialized (or the website)
-parser.add_argument(
-    "--sitename",
-    default=None,
-    dest="sitename", 
-    required=not has_go_module_been_initialized())
 
 parser.add_argument("--theme",
                     dest="theme",
@@ -75,67 +164,102 @@ parser.add_argument("--theme",
                     required=False,
                     help="The name of the theme to use")
 
-parser.add_argument("--install-theme",
-                    dest="install_theme",
+parser.add_argument("--build",
+                    dest="build",
                     required=False,
-                    default=None,
-                    help="The name of the theme to install")
+                    default=False,
+                    help="Builds the site so that it can be deployed",
+                    action="store_true")
 
-parser.add_argument("--install-theme-gomod",
-                    dest="install_theme_gomod",
+parser.add_argument("--push",
+                    dest="push",
                     required=False,
                     default=None,
-                    help="Golang module to add")
+                    action="store_true",
+                    help="Pushes hugo content to deployment branch")
 
-parser.add_argument("--install-theme-github",
-                    dest="install_theme_github",
+parser.add_argument("--init",
+                    dest="init",
                     required=False,
                     default=None,
-                    help="Github URL for github submodule")
+                    action="store_true",
+                    help="Initialize the project via config.json")
+
 
 args = parser.parse_args()
 
-# BASELINE - CONTAINER SHOULD BE RUNNING
-if not is_container_running():        
-    # We'll see if we can start it programmatically
-    try:
-        start_container()
-    except Exception as ex:
-        print(f"Was unable to start container...\n{ex}\n\n"
-              f"Please run `docker compose up -d` then try again...")        
+if args.build is True:
+    if not is_image_present():
+        print("Image must be present in order to deploy")
         exit(1)
-    print("Waiting for container to settle down...")
-    sleep(5)
-    if not is_container_running():
-        print(f"Container {CONTAINER_NAME} must be running.\n\n"
-              f"Please run `docker compose up -d")
-        exit(1)
-
-if args.sitename is not None:
-    run_command_in_container(f"hugo mod init {args.sitename}")
-    os.makedirs(os.path.join(WEBSITE_PATH, "content", "posts"))
-    with open(os.path.join(WEBSITE_PATH, "content", "posts", "FirstPost.md"), "w") as f:
-        f.write("""First Post
         
-        I have some content!
-        """)
+    if is_container_running():
+        stop_container()
+
+    toml_path = os.path.join(WEBSITE_PATH, "hugo.toml")
+
+    with open(toml_path, "r") as f:
+        previous_toml_content = f.read()
+
+    config = get_config()
+
+    # Regex to match 'baseurl = "<value>"'
+    updated_content = re.sub(
+        r'(?m)^baseurl\s*=\s*".*"',  # Match 'baseurl = "<value>"' at the beginning of the line
+        f'baseurl = "{config['baseUrl']}"',  # Replace with the new baseurl
+        previous_toml_content
+    )
+
+    with open(toml_path, "w") as f:
+        f.write(updated_content)
+
+    set_deploy_site(True)
+
+    # Ensure our container is turned off
+    stop_container()
+
+    start_container()
+    wait_for_container()
+    set_deploy_site(False)
+
+    # Reset our toml file
+    with open(toml_path, "w") as f:
+        f.write(updated_content)
+
+    exit()
+
+
+def ensure_container_is_running():
+    # BASELINE - CONTAINER SHOULD BE RUNNING
+    if not is_container_running():
+        # We'll see if we can start it programmatically
+        try:
+            start_container()
+        except Exception as ex:
+            print(f"Was unable to start container...\n{ex}\n\n"
+                  f"Please run `docker compose up -d` then try again...")
+            exit(1)
+        print("Waiting for container to settle down...")
+        sleep(5)
+        if not is_container_running():
+            print(f"Container {CONTAINER_NAME} must be running.\n\n"
+                  f"Please run `docker compose up -d")
+            exit(1)
+
+if args.init is True:
+    # Just to initialize it 
+    # we specified it in our compose file so it must be present
+    if not os.path.exists(ENV_FILE):
+        with open(ENV_FILE, "w") as f:
+            f.write('')
+    ensure_container_is_running()    
+    initialize_repository()
+else:
+    ensure_container_is_running()
 
 if args.theme is not None:
     update_env_variables({"THEME_NAME": args.theme})
     restart_container()
 
-if args.install_theme or args.install_theme_gomod or args.install_theme_github:
-    errors: list[str] = []
-    # Ensure all 3 are present
-    if not args.install_theme:
-        errors.append("--install-theme")
-    if not args.install_theme_gomod:
-        errors.append("--install-theme-gomod")
-    if not args.install_theme_github:
-        errors.append("--install-theme-github")
-    
-    if errors:
-        print(f"Must specify {', '.join(errors)} as well")
-        exit(1)
-    
-    install_theme(args.install_theme, args.install_theme_gomod, args.install_theme_github)
+if args.push is True:
+    push_deployment()

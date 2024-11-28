@@ -2,6 +2,8 @@
   blogsite:
     image: badgers-hugo-template
     container_name: blogsite
+    env_file:
+      - .env
     build:
       context: .
     volumes:

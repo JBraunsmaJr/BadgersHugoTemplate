@@ -18,35 +18,33 @@ options available for cloning.
 
 ## Setup.py
 
-What do you want to name your site? -- This is a go module name, so avoid spaces and special characters.
+Everything is set via `config.json`. There are some reasonable defaults which follows NetworkChuck's video. It is worth noting
+if you're deploying to github pages you need to change the baseUrl to be whatever your repository name is. For instance, for me, I have
+to put `/BadgersBlog` - because that's the repo name I'm using for my blog. Not doing this will result in some weirdness such as
 
-Example: 
+- Paths not working
+- Themes! Themes won't work properly! You'll have content, but it won't look.... pretty
+
+How to get started:
+
+Confirm the things in the `config.json` are okay then run the setup script with the `--init` flag.
 
 ```bash
-python ./setup.py --sitename badgers-corner
+python ./setup.py --init
 ```
 
 ----
 
 [Hugo Themes](https://themes.gohugo.io/)
 
-The following three parameters are required if you want to install a theme. 
-They work together to do multiple things at once. For example’s sake, we're using
-[Terminal](https://themes.gohugo.io/themes/hugo-theme-terminal/) just like NetworkChuck.
+There are three values required per theme you want to try/install. The name, GitHub Url, and the golang module name.
+The setup script will automatically initialize your submodules, add the theme where it needs to go and update the 
+`.env` to specified theme name. It then restarts the container so the theme changes take over.
 
-| Parameter | Description | Example value |
-| --- | --- | --- |
-| --install-theme | Name of theme to install | terminal |
-| --install-theme-gomod | Go module name | github.com/panr/hugo-theme-terminal/v4 |
-| --install-theme-github | Github URL to submodule | https://github.com/panr/hugo-theme-terminal.git |
+Note: You may have to verify the `hugo.toml` file within the `website` directory. For terminal, it's included for 
+convenience and automatically pulled in if used.
 
-The following command will install the `terminal` theme and update the `.env` file to use `terminal`. 
-
-```bash
-python ./setup.py --install-theme terminal --install-theme-gomod github.com/panr/hugo-theme-terminal/v4 --install-theme-github https://github.com/panr/hugo-theme-terminal.git
-```
-
-Within the template we have `terminal-hugo.toml`, you'll want to replace the `hugo.toml` in the website directory with that.
+[Terminal (Default Theme)](https://themes.gohugo.io/themes/hugo-theme-terminal/) just like NetworkChuck.
 
 ----
 
@@ -55,6 +53,22 @@ restart the container.
 
 ```bash
 python ./setup.py --theme terminal
+```
+
+## Push Deployment
+
+The local version used for testing/development is leveraging localhost:1313. We need to make it work in production environments.
+So run the setup script with the `--build` flag. This will update all the hugo project's baseUrl to match what's defined in the 
+`config.json`
+
+```bash
+python setup.py --build
+```
+
+If everything looks okay, run the script with the `--push` flag
+
+```bash
+python setup.py --push
 ```
 
 ## Live Reload
@@ -73,6 +87,6 @@ docker compose up -d
 
 **Stop container:**
 
-``bash
+```bash
 docker compose down
-``
+````

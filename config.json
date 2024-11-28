@@ -1,0 +1,13 @@
+{
+  "goSubName": "my-blog",
+  "baseUrl": "/",
+  "deploymentBranch": "github-pages",
+  "theme": "terminal",
+  "themes": [
+    {
+      "name": "terminal",
+      "moduleName": "github.com/panr/hugo-theme-terminal/v4",
+      "githubUrl": "https://github.com/panr/hugo-theme-terminal.git"
+    }
+  ]
+}
