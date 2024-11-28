@@ -8,7 +8,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: jbraunsmajr/badgers-hugo-template
+  IMAGE_NAME: ${{ github.repository_owner }}/badgers-hugo-template
 
 jobs:
 

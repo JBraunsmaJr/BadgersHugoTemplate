@@ -10,7 +10,21 @@ CONTAINER_NAME: Final[str] = "blogsite"
 CONTAINER_COMMAND_PREFIX: Final[str] = f"docker exec {CONTAINER_NAME}"
 WEBSITE_PATH: Final[str] = os.path.join(SCRIPT_DIR, "website")
 ENV_FILE = os.path.join(SCRIPT_DIR, ".env")
-IMAGE_NAME: Final[str] = "ghcr.io/jbraunsmajr/badgers-hugo-template"
+
+def extract_username_from_compose():
+    pattern = r'ghcr\.io/([^/]+)/'
+    
+    with open(os.path.join(SCRIPT_DIR, "compose.yml"), "r") as f:
+        compose_contents = f.read()
+    
+    match = re.search(pattern, compose_contents)
+    
+    if match:
+        return match.group(1)
+    else:
+        raise ValueError("Was unable to determine username from compose.yml")    
+
+IMAGE_NAME: Final[str] = f"ghcr.io/{extract_username_from_compose()}/badgers-hugo-template"
 
 def is_container_running() -> bool:
     return len(os.popen(f"docker ps -q --filter name={CONTAINER_NAME}").read().strip()) > 0
