@@ -10,15 +10,20 @@ CONTAINER_NAME: Final[str] = "blogsite"
 CONTAINER_COMMAND_PREFIX: Final[str] = f"docker exec {CONTAINER_NAME}"
 WEBSITE_PATH: Final[str] = os.path.join(SCRIPT_DIR, "website")
 ENV_FILE = os.path.join(SCRIPT_DIR, ".env")
+IMAGE_NAME: Final[str] = "ghcr.io/jbraunsmajr/badgers-hugo-template"
 
 def is_container_running() -> bool:
     return len(os.popen(f"docker ps -q --filter name={CONTAINER_NAME}").read().strip()) > 0
 
 def is_image_present() -> bool:
-    return len(os.popen(f"docker images -q badgers-hugo-template -q").read().strip()) > 0
+    return len(os.popen(f"docker images -q {IMAGE_NAME} -q").read().strip()) > 0
 
 def build_image():
-    os.system("docker compose build")
+    # Try to pull it first, should pull from github registry
+    os.system("docker compose pull")
+    
+    if not is_image_present():
+        os.system("docker compose build")
 
 def run_command_in_container(command: str):
     os.system(f"{CONTAINER_COMMAND_PREFIX} {command}")

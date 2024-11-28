@@ -1,13 +1,14 @@
 ﻿services:
   blogsite:
-    image: badgers-hugo-template
+    image: ghcr.io/jbraunsmajr/badgers-hugo-template:latest
     container_name: blogsite
-    env_file:
-      - .env
     build:
       context: .
     volumes:
       - "./website:/blogsite/"
+    environment:
+      THEME: ${THEME:-}
+      DEPLOY: ${DEPLOY:-false}
     ports:
       - "1313:1313"
       - "8080:80"
