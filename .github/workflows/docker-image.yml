@@ -9,7 +9,7 @@ on:
 env:
   REGISTRY: ghcr.io
   OWNER: '${{ github.repository_owner }}'
-  IMAGE_NAME: '${OWNER,,}/badgers-hugo-template'
+  IMAGE_NAME: '${{ OWNER,, }}/badgers-hugo-template'
 
 jobs:
 
