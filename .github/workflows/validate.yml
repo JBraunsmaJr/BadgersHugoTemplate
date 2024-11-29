@@ -14,7 +14,7 @@ jobs:
   # this job is mostly for updating the config.json
   # and compose.yml to match your repository information.
   validate-project:
-
+    if: github.repository != 'jbraunsmajr/badgershugotemplate'
     runs-on: ubuntu-latest
 
     env:
@@ -47,7 +47,7 @@ jobs:
           FILE=compose.yml
           if grep -q "$TARGET_TEXT" "$FILE"; then
             echo "Text found, replacing..."
-            sed -i "s|$TARGET_TEXT|$IMAGE_NAME|g" "$FILE"
+            sed -i "s|$TARGET_TEXT|$OWNER_LOWER_CASE|g" "$FILE"
             echo "CHANGED_COMPOSE=1" >>${GITHUB_ENV}
           else
             echo "Text not found, no replacement needed for compose.yml"
