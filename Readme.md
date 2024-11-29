@@ -16,11 +16,16 @@ Click `Use This Template` at [BadgersHugoTemplate](https://github.com/JBraunsmaJ
 Clone your newly created repo using this template. The `<> Code` button has a dropdown menu with the various 
 options available for cloning. 
 
-You will need to update the [compose.yml](./compose.yml) to point towards your GitHub account!
+You will need to update the [compose.yml](./compose.yml) to point towards your GitHub info!
 
 ![username to change](./resources/username_to_change.png)
 
-You may have noticed a few workflows were included. This is why the username bit is important.
+This is easy, it should match the url after `github.com`
+
+![url](./resources/url.png)
+
+You may have noticed a few workflows were included. This is why the prior step is important.
+The workflow automatically pulls this information
 
 1. [docker-image.yml](./.github/workflows/docker-image.yml) - This is the docker image that'll run hugo!
 2. 

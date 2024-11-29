@@ -28,7 +28,7 @@ jobs:
       run: |
         echo "OWNER_LOWER_CASE=${OWNER,,}" >>${GITHUB_ENV}
       env:
-        OWNER: '${{ github.repository_owner }}'
+        OWNER: '${{ github.repository }}'
     
     - name: Set image name
       run: |

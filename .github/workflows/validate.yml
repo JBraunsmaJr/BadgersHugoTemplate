@@ -1,0 +1,122 @@
+﻿name: Build Project
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  
+  # this job is mostly for updating the config.json
+  # and compose.yml to match your repository information.
+  validate-project:
+
+    runs-on: ubuntu-latest
+
+    env:
+      TARGET_TEXT: "jbraunsmajr/badgershugotemplate"
+    
+    permissions:
+      contents: write
+      id-token: write
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set lowercase owner name
+        run: |
+          echo "OWNER_LOWER_CASE=${OWNER,,}" >>${GITHUB_ENV}
+        env:
+          OWNER: '${{ github.repository }}'
+
+      - name: Set image name
+        run: |
+          echo "IMAGE_NAME=${OWNER_LOWER_CASE}/badgers-hugo-template" >>${GITHUB_ENV}
+
+      - name: Set repo name
+        run: |
+          LAST_PART=$(echo "${{ github.repository }}" | awk -F/ '{print $NF}')
+          echo "REPO_NAME=$LAST_PART" >>${GITHUB_ENV}
+
+      - name: Check compose.yml, if target text exists, swap it out with our information
+        run: |
+          FILE=compose.yml
+          if grep -q "$TARGET_TEXT" "$FILE"; then
+            echo "Text found, replacing..."
+            sed -i "S|$TARGET_TEXT|$IMAGE_NAME|g" "$FILE"
+            echo "CHANGED_COMPOSE=1" >>${GITHUB_ENV}
+          else
+            echo "Text not found, no replacement needed for compose.yml"
+          fi
+
+      - name: Check config.json, swap Base URL
+        run: |
+          FILE=config.json
+          if grep -q "\"baseUrl\": \"/\"" "$FILE"; then        
+            jq --arg newUrl "/$REPO_NAME" '.baseUrl = $newUrl' "$FILE" > tmp.json && mv tmp.json "$FILE"
+            echo "CHANGED_CONFIG=1" >>${GITHUB_ENV}
+          else
+            echo "Config.json looks fine"
+          fi
+
+      - name: Commit and push changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+
+  # We don't need to deploy/build anything if 
+  # our website directory is not present
+  check-folder:
+    runs-on: ubuntu-latest
+    
+    steps: 
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Check if folder exists
+        run: |
+          if [ -d "./website" ]; then
+            echo "FOLDER_EXISTS=true" >>${GITHUB_ENV}
+          else
+            echo "FOLDER_EXISTS=false" >>${GITHUB_ENV}
+          fi
+  
+  build_deployment:
+    needs: check-folder
+    if: env.FOLDER_EXISTS == 'true'    
+    runs-on: ubuntu-latest
+    
+    # We need to delete any old versions of our "pages" branch 
+    # This also helps avoid merge conflicts and what not.
+    steps:
+      - name: Delete Github Pages Branch
+        uses: dawidd6/action-delete-branch@v3
+        with:
+          github_token: ${{ github.token }}
+          branches: github-pages
+          soft_fail: true
+
+      - name: Delete Github Pages Branch
+        uses: dawidd6/action-delete-branch@v3
+        with:
+          github_token: ${{ github.token }}
+          branches: build
+          soft_fail: true
+    
+      - name: Build Project
+        run: |
+          git checkout -b build
+          
+          python setup.py --build
+          
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git commit -m "New deployment"
+          git subtree split --prefix website/public -b github-pages
+          
+          git push origin github-pages
+          
+        
