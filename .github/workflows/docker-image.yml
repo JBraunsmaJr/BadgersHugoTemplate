@@ -1,10 +1,13 @@
 name: Docker Image CI
 
 on:
+  workflow_dispatch:
   push:
     branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
+    paths:
+      - .github/workflows/validate.yml
+      - entrypoint.sh
+      - Dockerfile  
 
 env:
   REGISTRY: ghcr.io

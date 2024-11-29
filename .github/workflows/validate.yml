@@ -1,4 +1,4 @@
-﻿name: Build Project
+﻿name: Initial Setup
 
 on:
   push:
@@ -62,72 +62,8 @@ jobs:
           else
             echo "Config.json looks fine"
           fi
-          
-      - name: Initialize if website not present
-        run: |
-          if [ ! -d "./website" ]; then
-           python setup.py --init
-          fi
 
       - name: Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v5
 
-  # We don't need to deploy/build anything if 
-  # our website directory is not present
-  check-folder:
-    runs-on: ubuntu-latest
-    
-    steps: 
-      - name: Checkout Code
-        uses: actions/checkout@v4
-      
-      - name: Check if folder exists
-        run: |
-          if [ -d "./website" ]; then
-            echo "FOLDER_EXISTS=true" >>${GITHUB_ENV}
-          else
-            echo "FOLDER_EXISTS=false" >>${GITHUB_ENV}
-            exit 1
-          fi
   
-  build_deployment:
-    needs: check-folder
-    runs-on: ubuntu-latest
-    
-    # We need to delete any old versions of our "pages" branch 
-    # This also helps avoid merge conflicts and what not.
-    steps:
-      - name: Delete Github Pages Branch
-        uses: dawidd6/action-delete-branch@v3
-        with:
-          github_token: ${{ github.token }}
-          branches: github-pages
-          soft_fail: true
-
-      - name: Delete Github Pages Branch
-        uses: dawidd6/action-delete-branch@v3
-        with:
-          github_token: ${{ github.token }}
-          branches: build
-          soft_fail: true
-      
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          submodules: true
-    
-      - name: Build Project
-        run: |
-          git checkout -b build
-          
-          python setup.py --build
-          
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          
-          git commit -m "New deployment"
-          git subtree split --prefix website/public -b github-pages
-          
-          git push origin github-pages
-          
-        
