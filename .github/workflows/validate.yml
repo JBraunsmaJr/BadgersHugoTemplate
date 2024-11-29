@@ -81,11 +81,11 @@ jobs:
             echo "FOLDER_EXISTS=true" >>${GITHUB_ENV}
           else
             echo "FOLDER_EXISTS=false" >>${GITHUB_ENV}
+            exit 1
           fi
   
   build_deployment:
     needs: check-folder
-    if: env.FOLDER_EXISTS == 'true'    
     runs-on: ubuntu-latest
     
     # We need to delete any old versions of our "pages" branch 
