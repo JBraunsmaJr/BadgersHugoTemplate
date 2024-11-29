@@ -16,24 +16,21 @@ Click `Use This Template` at [BadgersHugoTemplate](https://github.com/JBraunsmaJ
 Clone your newly created repo using this template. The `<> Code` button has a dropdown menu with the various 
 options available for cloning. 
 
-You will need to update the [compose.yml](./compose.yml) to point towards your GitHub info!
+There should be 3 Github actions that start running.
 
-![username to change](./resources/username_to_change.png)
+1. Initial Setup (this should pass. It updates our compose.yml and config.json with our repository info - otherwise it keeps the template info)
+2. Deploy Site (this should fail because we don't have a website directory yet)
+3. Docker Image CI (this should hopefully pass? It's possible the Initial Setup needs to finish first before this passes)
 
-This is easy, it should match the url after `github.com`
+Reason why Initial Setup and Docker Image CI are separate is because the Initial Setup workflow is no longer needed
+once it passes the first time.
 
-![url](./resources/url.png)
-
-You may have noticed a few workflows were included. This is why the prior step is important.
-The workflow automatically pulls this information
-
-1. [docker-image.yml](./.github/workflows/docker-image.yml) - This is the docker image that'll run hugo!
-2. 
+Feel free to delete the [validate.yml](.github/workflows/validate.yml) once the action is complete.
 
 ## Setup.py
 
 Everything is set via `config.json`. There are some reasonable defaults which follows NetworkChuck's video. It is worth noting
-if you're deploying to github pages you need to change the baseUrl to be whatever your repository name is. For instance, for me, I have
+if you're deploying to GitHub pages you need to change the baseUrl to be whatever your repository name is. For instance, for me, I have
 to put `/BadgersBlog` - because that's the repo name I'm using for my blog. Not doing this will result in some weirdness such as
 
 - Paths not working
@@ -46,6 +43,25 @@ Confirm the things in the `config.json` are okay then run the setup script with 
 ```bash
 python ./setup.py --init
 ```
+
+Now, for the most part, you only have to worry about adding content to your [posts](website/content/posts) directory (website/content/posts)
+
+Feel free to navigate to `http://localhost:1313` to validate everything is working. Otherwise, we're ready to
+commit! 
+
+```bash
+git add .
+git commit -m "Some message you want"
+git push origin master
+```
+
+This should kick off a GitHub action! When it finishes you should have a new branch `github-pages`. 
+
+On GitHub, go to your repo settings -> Pages.
+Select the branch `github-pages` and hit save! This should kick off another GitHub action which deploys 
+your static site!
+
+That's it! Now anytime you upload new content your GitHub pages will stay in sync!
 
 ----
 
@@ -67,22 +83,6 @@ restart the container.
 
 ```bash
 python ./setup.py --theme terminal
-```
-
-## Push Deployment
-
-The local version used for testing/development is leveraging localhost:1313. We need to make it work in production environments.
-So run the setup script with the `--build` flag. This will update all the hugo project's baseUrl to match what's defined in the 
-`config.json`
-
-```bash
-python setup.py --build
-```
-
-If everything looks okay, run the script with the `--push` flag
-
-```bash
-python setup.py --push
 ```
 
 ## Live Reload

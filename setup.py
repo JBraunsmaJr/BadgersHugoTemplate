@@ -108,21 +108,6 @@ def wait_for_container():
     while is_container_running():
         sleep(0.5)
 
-def push_deployment():
-    config = get_config()
-    branch_name = config["deploymentBranch"]
-
-    if len(os.popen("git branch --list").read().strip()) > 0:
-        print(f"Cleaning up existing {branch_name}...")
-        os.system(f"git branch -D {branch_name}")
-
-    print(f"Creating subtree {branch_name}...")
-    os.system(f"git subtree split --prefix website/public -b {branch_name}")
-
-    print(f"Pushing deployment...")
-    os.system(f"git push origin {branch_name}")
-
-
 def initialize_repository():
     if not os.path.exists(os.path.join(SCRIPT_DIR, ".git")):
         print("Git repository was not initialized. Doing that now...")
@@ -189,13 +174,6 @@ parser.add_argument("--build",
                     default=False,
                     help="Builds the site so that it can be deployed",
                     action="store_true")
-
-parser.add_argument("--push",
-                    dest="push",
-                    required=False,
-                    default=None,
-                    action="store_true",
-                    help="Pushes hugo content to deployment branch")
 
 parser.add_argument("--init",
                     dest="init",
@@ -281,6 +259,3 @@ else:
 if args.theme is not None:
     update_env_variables({"THEME_NAME": args.theme})
     restart_container()
-
-if args.push is True:
-    push_deployment()
