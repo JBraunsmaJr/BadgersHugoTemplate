@@ -11,31 +11,31 @@ CONTAINER_COMMAND_PREFIX: Final[str] = f"docker exec {CONTAINER_NAME}"
 WEBSITE_PATH: Final[str] = os.path.join(SCRIPT_DIR, "website")
 ENV_FILE = os.path.join(SCRIPT_DIR, ".env")
 
-def extract_username_from_compose():
-    pattern = r'ghcr\.io/([^/]+)/'
-    
+def extract_image_name():
+    pattern = r'image:\s*([\w\-\.\/:]+)'
+
     with open(os.path.join(SCRIPT_DIR, "compose.yml"), "r") as f:
         compose_contents = f.read()
-    
+
     match = re.search(pattern, compose_contents)
-    
+
     if match:
         return match.group(1)
     else:
-        raise ValueError("Was unable to determine username from compose.yml")    
+        raise ValueError("Was unable to determine username from compose.yml")
 
-IMAGE_NAME: Final[str] = f"ghcr.io/{extract_username_from_compose()}/badgers-hugo-template"
+IMAGE_NAME: Final[str] = extract_image_name()
 
 def is_container_running() -> bool:
     return len(os.popen(f"docker ps -q --filter name={CONTAINER_NAME}").read().strip()) > 0
 
 def is_image_present() -> bool:
-    return len(os.popen(f"docker images -q {IMAGE_NAME} -q").read().strip()) > 0
+    return len(os.popen(f"docker images -q {IMAGE_NAME}").read().strip()) > 0
 
 def build_image():
     # Try to pull it first, should pull from github registry
     os.system("docker compose pull")
-    
+
     if not is_image_present():
         os.system("docker compose build")
 
@@ -87,7 +87,7 @@ def set_config(variables: dict[str, Any]) -> dict[str, Any]:
     return variables
 
 
-def update_env_variables(variables: dict[str, str | bool]):    
+def update_env_variables(variables: dict[str, str | bool]):
     if os.path.exists(ENV_FILE):
         with open(os.path.join(SCRIPT_DIR, ".env"), "r") as f:
             contents = {name: value for name, value in [x.split('=') for x in f.readlines() if len(x.strip()) > 1]}
@@ -149,7 +149,7 @@ def initialize_repository():
             theme_name = theme["name"]
             url = theme["githubUrl"]
             os.system(f"git submodule add -f \"{url}\" {os.path.join('website', 'themes', theme_name)}")
-            
+
             # if we're using terminal we'll automatically copy our config over for it
             if theme_name.lower() == "terminal":
                 with open(os.path.join(SCRIPT_DIR, "terminal-hugo.toml"), "r") as f:
@@ -209,9 +209,11 @@ args = parser.parse_args()
 
 if args.build is True:
     if not is_image_present():
-        print("Image must be present in order to deploy")
+        print("Image must be present in order to deploy:\n\n"
+              f"Expected: {IMAGE_NAME}\n"
+              f"Currently Present: {os.popen('docker images')}")
         exit(1)
-        
+
     if is_container_running():
         stop_container()
 
@@ -221,7 +223,7 @@ if args.build is True:
         previous_toml_content = f.read()
 
     config = get_config()
-    base_url = config["base_url"]
+    base_url = config["baseUrl"]
     # Regex to match 'baseurl = "<value>"'
     updated_content = re.sub(
         r'(?m)^baseurl\s*=\s*".*"',  # Match 'baseurl = "<value>"' at the beginning of the line
@@ -271,7 +273,7 @@ if args.init is True:
     if not os.path.exists(ENV_FILE):
         with open(ENV_FILE, "w") as f:
             f.write('')
-    ensure_container_is_running()    
+    ensure_container_is_running()
     initialize_repository()
 else:
     ensure_container_is_running()
