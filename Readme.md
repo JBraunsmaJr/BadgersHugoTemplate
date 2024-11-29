@@ -5,6 +5,8 @@ tools containerized.
 
 The [Dockerfile](./Dockerfile) has everything we need to develop our hugo-website with both golang and hugo.
 
+Video if you're interested: https://youtu.be/KnjFVtHJuXU
+
 ## Requirements
 
 This requires you to have both Python and Docker installed on your machine.
