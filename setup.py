@@ -221,11 +221,11 @@ if args.build is True:
         previous_toml_content = f.read()
 
     config = get_config()
-
+    base_url = config["base_url"]
     # Regex to match 'baseurl = "<value>"'
     updated_content = re.sub(
         r'(?m)^baseurl\s*=\s*".*"',  # Match 'baseurl = "<value>"' at the beginning of the line
-        f'baseurl = "{config['baseUrl']}"',  # Replace with the new baseurl
+        f'baseurl = "{base_url}"',  # Replace with the new baseurl
         previous_toml_content
     )
 
