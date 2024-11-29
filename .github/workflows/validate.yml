@@ -47,7 +47,7 @@ jobs:
           FILE=compose.yml
           if grep -q "$TARGET_TEXT" "$FILE"; then
             echo "Text found, replacing..."
-            sed -i "S|$TARGET_TEXT|$IMAGE_NAME|g" "$FILE"
+            sed -i "s|$TARGET_TEXT|$IMAGE_NAME|g" "$FILE"
             echo "CHANGED_COMPOSE=1" >>${GITHUB_ENV}
           else
             echo "Text not found, no replacement needed for compose.yml"
