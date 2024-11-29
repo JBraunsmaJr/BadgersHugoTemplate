@@ -62,6 +62,12 @@ jobs:
           else
             echo "Config.json looks fine"
           fi
+          
+      - name: Initialize if website not present
+        run: |
+          if [ ! -d "./website" ]; then
+           python setup.py --init
+          fi
 
       - name: Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v5
@@ -104,6 +110,11 @@ jobs:
           github_token: ${{ github.token }}
           branches: build
           soft_fail: true
+      
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
     
       - name: Build Project
         run: |
