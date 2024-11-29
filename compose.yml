@@ -1,6 +1,6 @@
 ﻿services:
   blogsite:
-    image: ghcr.io/jbraunsmajr/badgershugotemplate/badgers-hugo-template:latest
+    image: ghcr.io/jbraunsmajr/badgershugotemplate/badgers-hugo-template/badgers-hugo-template:latest
     container_name: blogsite
     build:
       context: .
