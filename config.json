@@ -1,6 +1,6 @@
 {
   "goSubName": "my-blog",
-  "baseUrl": "/BadgersHugoTemplate",
+  "baseUrl": "/",
   "deploymentBranch": "github-pages",
   "theme": "terminal",
   "themes": [
