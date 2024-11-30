@@ -1,4 +1,4 @@
-﻿import argparse
+import argparse
 import json
 import os
 import re
@@ -205,8 +205,14 @@ if args.build is True:
     # Regex to match 'baseurl = "<value>"'
     updated_content = re.sub(
         r'(?m)^baseurl\s*=\s*".*"',  # Match 'baseurl = "<value>"' at the beginning of the line
-        f'baseurl = "{base_url}"',  # Replace with the new baseurl
+        f'baseurl = "{base_url}"',  # Replace with the new baseurl        
         previous_toml_content
+    )
+
+    updated_content = re.sub(
+        r'(?m)logoHomeLink\s*=\s*".*"',  # Match 'baseurl = "<value>"' at the beginning of the line
+        f'logoHomeLink = "{base_url}"',  # Replace with the new baseurl        
+        updated_content
     )
 
     with open(toml_path, "w") as f:
